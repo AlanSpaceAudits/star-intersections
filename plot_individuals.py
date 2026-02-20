@@ -45,13 +45,6 @@ def load_data(path: Path) -> pd.DataFrame:
     df.columns = df.columns.str.strip()
     # Estimate observation distance from GE terrestrial drop
     df["dist_m"] = 2.0 * R_EARTH_M * deg2rad(df["GE_terrestrial_drop_dd"])
-    # Exclude observations beyond 100 km
-    excluded = df[df["dist_m"] > MAX_DIST_M]
-    if len(excluded) > 0:
-        for _, row in excluded.iterrows():
-            print(f"  Excluded: {row['Peak']} / {row['Star']} "
-                  f"(~{row['dist_m']/1000:.0f} km > 100 km)")
-    df = df[df["dist_m"] <= MAX_DIST_M].reset_index(drop=True)
     return df
 
 
@@ -160,10 +153,19 @@ def main():
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Compute global 1σ from all residuals for error bars
-    fe_sigma = stats.norm.fit(df["ΔFE_intersection_dd"].values)[1]
-    ge_sigma = stats.norm.fit(df["ΔGE_intersection__dd"].values)[1]
+    # Compute global 1σ from observations within 100 km only
+    df_fit = df[df["dist_m"] <= MAX_DIST_M]
+    excluded = df[df["dist_m"] > MAX_DIST_M]
+    if len(excluded) > 0:
+        for _, row in excluded.iterrows():
+            print(f"  Excluded from Gaussian fit: {row['Peak']} / {row['Star']} "
+                  f"(~{row['dist_m']/1000:.0f} km > 100 km)")
+    fe_sigma = stats.norm.fit(df_fit["ΔFE_intersection_dd"].values)[1]
+    ge_sigma = stats.norm.fit(df_fit["ΔGE_intersection__dd"].values)[1]
+    print(f"  Gaussian fit from {len(df_fit)} observations: "
+          f"FE σ={fe_sigma:.4f}°, GE σ={ge_sigma:.4f}°")
 
+    # Plot all peaks (including excluded ones)
     peaks = df.groupby("Peak", sort=False)
     for peak_name, peak_df in peaks:
         fig = plot_peak(peak_df, peak_name, fe_sigma, ge_sigma)

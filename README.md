@@ -196,7 +196,7 @@ In short, the Gaussian error model describes the statistical distribution of res
 
 ### Individual Peak Plots (`plots/individuals/`)
 
-13 plots, one per included peak. Each has two panels:
+14 plots, one per peak (including excluded peaks). Each has two panels:
 
 - **Left panel (lime green)**: FE predicted vs FE measured
 - **Right panel (hot pink)**: GE predicted vs GE measured
@@ -263,7 +263,7 @@ star-intersections/
 ├── README.md
 ├── analysis.ipynb              # Interactive Jupyter notebook
 ├── plot_intersections.py       # Overview plots (4 figures)
-├── plot_individuals.py         # Individual per-peak plots (13 figures)
+├── plot_individuals.py         # Individual per-peak plots (14 figures)
 ├── .gitignore
 └── plots/
     ├── 1_residual_bars.png
@@ -277,6 +277,7 @@ star-intersections/
         ├── blue_mountain.png
         ├── mount_rosa.png
         ├── green_mountain.png
+        ├── north_peak.png
         ├── getaway_peak.png
         ├── hounds_tooth.png
         ├── old_blyn.png
