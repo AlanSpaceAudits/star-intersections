@@ -1,22 +1,15 @@
 # Celestial Theodolite Intersection Analysis
 
-Gaussian error distribution analysis of celestial theodolite observations comparing **Flat Earth (FE)** and **Globe Earth (GE)** model predictions against actual measured star positions.
+Gaussian error distribution analysis of celestial theodolite observations comparing Flat Earth (FE) and Globe Earth (GE) model predictions against measured star positions.
 
 ## What This Does
 
-This project takes theodolite intersection data from star observations at 13 mountain peaks and asks a simple question for each observation: **does the model's predicted angle match the measured angle within the measurement uncertainty?**
+Theodolite intersection data from 17 star observations across 13 peaks is analyzed under two geometric models:
 
-Two competing geometric models are tested:
+- **Flat Earth (FE)**: Predicts elevation angle assuming a planar surface with no curvature correction
+- **Globe Earth (GE)**: Predicts elevation angle accounting for Earth's curvature via a terrestrial drop correction
 
-- **Flat Earth (FE)**: Predicts the elevation angle to a star assuming a planar surface with no curvature correction
-- **Globe Earth (GE)**: Predicts the elevation angle accounting for Earth's curvature via a "terrestrial drop" correction
-
-For each observation, we have:
-- The model's **predicted** elevation angle
-- The **measured** elevation angle from the theodolite intersection
-- The **residual** (delta) between prediction and measurement
-
-We fit a Gaussian error distribution to the residuals across all observations to quantify the measurement uncertainty, then check whether each prediction falls within the statistical error bars of its measurement.
+For each observation, the dataset contains the model's predicted angle, the measured angle, and the residual (delta) between them. A Gaussian distribution is fitted to the residuals to quantify measurement uncertainty, then each prediction is checked against the error bars of its corresponding measurement.
 
 ## Dataset
 
@@ -31,11 +24,11 @@ We fit a Gaussian error distribution to the residuals across all observations to
 | Mount Rosa | HD 17320 | Colorado |
 | Green Mountain | HD 28388 | Colorado |
 | North Peak | HD55892 | Colorado |
-| Getaway Peak | HD102928 | — |
-| Hounds Tooth | HD199828 | — |
+| Getaway Peak | HD102928 | Idaho |
+| Hounds Tooth | HD199828 | Utah |
 | Old Blyn | HD206088, HD207098 | Washington |
 | Ediz Spit Blyn | HD187663, 3 Cap | Washington |
-| Puhitampi | Baten Kaitos, 53 Cet | — |
+| Puhitampi | Baten Kaitos, 53 Cet | Idaho |
 | Lucky Peak | HD 76600, HIP 45592 | Idaho |
 
 ### CSV Columns
@@ -109,7 +102,7 @@ Before relying on the Gaussian model, we verify the residuals actually follow a 
 | FE | 0.8874 | 0.0419 | Non-normal (p < 0.05) |
 | GE | 0.9631 | 0.6904 | Normal (p > 0.05) |
 
-The FE residuals fail the normality test (driven by the North Peak outlier at -0.23°), while GE residuals pass comfortably.
+The FE residuals fail the normality test (driven by the North Peak outlier at -0.23°). The GE residuals pass.
 
 ### Step 4: Error Bars on Measurements
 
@@ -123,11 +116,9 @@ The error bars on the measured values represent **±1σ** from the fitted Gaussi
 
 ### Step 5: Angular-to-Linear Conversion (Degrees to Meters)
 
-To make the error bars physically intuitive, we convert from angular units (degrees) to linear distance (meters).
+Angular error is converted to linear distance (meters) for each observation.
 
-**Estimating observation distance from the terrestrial drop:**
-
-The GE terrestrial drop angle is caused by Earth's curvature over the observation distance. The approximate relationship is:
+The observation distance is estimated from the GE terrestrial drop angle. The approximate relationship is:
 
 ```
 θ_drop ≈ d / (2R)    (in radians)
@@ -172,14 +163,11 @@ The verdict:
 
 | Badge | Condition | Meaning |
 |-------|-----------|---------|
-| **WITHIN 1σ** (green) | n_σ ≤ 1.0 | Prediction is statistically consistent with the measurement |
-| **WITHIN 2σ** (amber) | 1.0 < n_σ ≤ 2.0 | Marginal — prediction is outside typical error but within extended range |
-| **OUTSIDE 2σ** (red) | n_σ > 2.0 | Prediction is statistically inconsistent with the measurement |
+| **WITHIN 1σ** (green) | n_σ ≤ 1.0 | Prediction falls within 1 standard deviation of the measurement |
+| **WITHIN 2σ** (amber) | 1.0 < n_σ ≤ 2.0 | Prediction falls between 1 and 2 standard deviations |
+| **OUTSIDE 2σ** (red) | n_σ > 2.0 | Prediction falls beyond 2 standard deviations |
 
-In a well-calibrated model, you'd expect:
-- ~68% of observations within 1σ
-- ~95% within 2σ
-- Only ~5% outside 2σ
+For a normal distribution, ~68% of values fall within 1σ, ~95% within 2σ, and ~99.7% within 3σ.
 
 ## Output Plots
 
@@ -246,9 +234,9 @@ Both scripts save PNGs to the `plots/` directory.
 jupyter-lab
 ```
 
-Open `analysis.ipynb` and run cells with `Shift+Enter`. The notebook includes all overview plots, individual peak plots inline, summary statistics, and the full methodology documentation with LaTeX-rendered equations.
+Open `analysis.ipynb` and run cells with `Shift+Enter`.
 
-**Open in Google Colab (no install needed):**
+**Open in Google Colab:**
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AlanSpaceAudits/star-intersections/blob/main/analysis.ipynb)
 
@@ -284,4 +272,4 @@ star-intersections/
 
 ## License
 
-This project is provided for educational and research purposes.
+Public domain.
