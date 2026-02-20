@@ -30,11 +30,23 @@ FE_COLOR = "#a0e632"   # bright lime green
 GE_COLOR = "#ff1493"   # hot pink
 BG_COLOR = "#fafafa"
 
+R_EARTH_M = 6_371_000  # mean Earth radius in meters
+MAX_DIST_M = 100_000   # exclude observations beyond 100 km
+
 
 def load_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, skipinitialspace=True)
     # Normalise column names (strip whitespace)
     df.columns = df.columns.str.strip()
+    # Estimate observation distance from GE terrestrial drop
+    df["dist_m"] = 2.0 * R_EARTH_M * np.deg2rad(df["GE_terrestrial_drop_dd"])
+    # Exclude observations beyond 100 km
+    excluded = df[df["dist_m"] > MAX_DIST_M]
+    if len(excluded) > 0:
+        for _, row in excluded.iterrows():
+            print(f"  Excluded: {row['Peak']} / {row['Star']} "
+                  f"(~{row['dist_m']/1000:.0f} km > 100 km)")
+    df = df[df["dist_m"] <= MAX_DIST_M].reset_index(drop=True)
     # Short label for each observation
     df["label"] = df["Peak"] + "\n" + df["Star"]
     return df

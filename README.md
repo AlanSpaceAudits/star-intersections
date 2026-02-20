@@ -2,6 +2,8 @@
 
 Gaussian error distribution analysis of celestial theodolite observations comparing Flat Earth (FE) and Globe Earth (GE) model predictions against measured star positions.
 
+**Note:** Observations with an estimated observation distance exceeding 100 km are excluded from this analysis for now. Distance is estimated from the GE terrestrial drop angle as `d ≈ 2R · θ_drop`. Currently this excludes North Peak / HD55892 (~131 km).
+
 ## What This Does
 
 Theodolite intersection data from 17 star observations across 13 peaks is analyzed under two geometric models:
@@ -13,24 +15,24 @@ For each observation, the dataset contains the model's predicted angle, the meas
 
 ## Dataset
 
-18 star observations across 14 peaks:
+17 star observations across 13 peaks (1 observation excluded, see note above):
 
-| Peak | Stars | Location |
-|------|-------|----------|
-| Pikes Peak | 39 Aquarii | Colorado |
-| Blodgett Peak | LP Aquarii | Colorado |
-| Cheyenne Mountain | Mu Fornacis | Colorado |
-| Blue Mountain | HD 32515 | Colorado |
-| Mount Rosa | HD 17320 | Colorado |
-| Green Mountain | HD 28388 | Colorado |
-| North Peak | HD55892 | Colorado |
-| Getaway Peak | HD102928 | Idaho |
-| Hounds Tooth | HD199828 | Utah |
-| Old Blyn | HD206088, HD207098 | Washington |
-| Ediz Spit Blyn | HD187663, 3 Cap | Washington |
-| Puhitampi | Baten Kaitos, 53 Cet | Idaho |
-| Lucky Peak | HD 76600, HIP 45592 | Idaho |
-| Varley SE | Regulus | British Columbia |
+| Peak | Stars | Location | Status |
+|------|-------|----------|--------|
+| Pikes Peak | 39 Aquarii | Colorado | Included |
+| Blodgett Peak | LP Aquarii | Colorado | Included |
+| Cheyenne Mountain | Mu Fornacis | Colorado | Included |
+| Blue Mountain | HD 32515 | Colorado | Included |
+| Mount Rosa | HD 17320 | Colorado | Included |
+| Green Mountain | HD 28388 | Colorado | Included |
+| North Peak | HD55892 | Colorado | Excluded (~131 km) |
+| Getaway Peak | HD102928 | Idaho | Included |
+| Hounds Tooth | HD199828 | Utah | Included |
+| Old Blyn | HD206088, HD207098 | Washington | Included |
+| Ediz Spit Blyn | HD187663, 3 Cap | Washington | Included |
+| Puhitampi | Baten Kaitos, 53 Cet | Idaho | Included |
+| Lucky Peak | HD 76600, HIP 45592 | Idaho | Included |
+| Varley SE | Regulus | British Columbia | Included |
 
 ### CSV Columns
 
@@ -64,7 +66,7 @@ Where:
 
 ### Step 2: Maximum Likelihood Estimation (MLE)
 
-We collect all residuals from the 18 observations and fit a Gaussian using Maximum Likelihood Estimation via `scipy.stats.norm.fit()`. This computes:
+We collect all residuals from the 17 included observations and fit a Gaussian using Maximum Likelihood Estimation via `scipy.stats.norm.fit()`. This computes:
 
 ```
         1   n
@@ -78,27 +80,15 @@ We collect all residuals from the 18 observations and fit a Gaussian using Maxim
             └─────────────────────┘
 ```
 
-**Important**: MLE uses `n` in the denominator (population standard deviation), not `n-1` (sample standard deviation). With n=18 the difference is small (~3%).
+**Important**: MLE uses `n` in the denominator (population standard deviation), not `n-1` (sample standard deviation). With n=17 the difference is small (~3%).
 
-**Results from this dataset (all 18 observations):**
-
-| | FE Residuals | GE Residuals |
-|---|---|---|
-| μ (mean/bias) | 0.1039° | 0.2811° |
-| σ (std dev) | 0.1141° | 0.0938° |
-| \|μ\| (absolute bias) | 0.1039° | 0.2811° |
-
-**Results excluding North Peak outlier (n=17):**
-
-The North Peak observation (HD55892, ΔFE = -0.23°) is the only negative FE residual and sits far from the cluster of other values. Removing it:
+**Results from this dataset (17 observations, North Peak excluded):**
 
 | | FE Residuals | GE Residuals |
 |---|---|---|
 | μ (mean/bias) | 0.1235° | 0.2771° |
 | σ (std dev) | 0.0827° | 0.0950° |
 | \|μ\| (absolute bias) | 0.1235° | 0.2771° |
-
-Without North Peak, FE σ drops from 0.1141° to 0.0827° (a 28% reduction). GE values are largely unchanged since North Peak's GE residual (0.35°) is not an outlier relative to the other GE residuals.
 
 ### Step 3: Normality Validation (Shapiro-Wilk Test)
 
@@ -108,23 +98,14 @@ Before relying on the Gaussian model, we verify the residuals actually follow a 
 - **If p > 0.05**: Cannot reject H₀ — data is consistent with normal
 - **If p ≤ 0.05**: Reject H₀ — data is not normally distributed
 
-**Results (all 18 observations):**
-
-| Model | W statistic | p-value | Verdict |
-|-------|-------------|---------|---------|
-| FE | 0.8918 | 0.0415 | Non-normal (p < 0.05) |
-| GE | 0.9641 | 0.6817 | Normal (p > 0.05) |
-
-The FE residuals fail the normality test (driven by the North Peak outlier at -0.23°). The GE residuals pass.
-
-**Results excluding North Peak (n=17):**
+**Results (17 observations, North Peak excluded):**
 
 | Model | W statistic | p-value | Verdict |
 |-------|-------------|---------|---------|
 | FE | 0.9407 | 0.3266 | Normal (p > 0.05) |
 | GE | 0.9638 | 0.7030 | Normal (p > 0.05) |
 
-With North Peak removed, both models' residuals pass the Shapiro-Wilk normality test.
+Both models' residuals pass the Shapiro-Wilk normality test.
 
 ### Step 4: Error Bars on Measurements
 
@@ -165,10 +146,10 @@ Where `σ_rad = σ_degrees · π / 180`.
 **Example — Pikes Peak (drop = 0.23°):**
 
 ```
-d = 2 × 6,371,000 × (0.23 × π/180) = 51,154 m ≈ 51 km
+d = 2 × 6,371,000 × (0.23 × π/180) = 51,150 m ≈ 51 km
 
-FE error: 51,154 × (0.1172 × π/180) = ±105 m
-GE error: 51,154 × (0.0917 × π/180) = ±82 m
+FE error: 51,150 × (0.0827 × π/180) = ±74 m
+GE error: 51,150 × (0.0950 × π/180) = ±85 m
 ```
 
 ### Step 6: Pass/Fail Determination
@@ -208,14 +189,14 @@ In short, the Gaussian error model describes the statistical distribution of res
 
 ### Overview Plots (`plots/`)
 
-1. **Residual bar chart** — All 18 observations side-by-side, ΔFE vs ΔGE with 1σ error bars
+1. **Residual bar chart** — All 17 observations side-by-side, ΔFE vs ΔGE with 1σ error bars
 2. **Gaussian histograms** — Residual distribution for each model with the fitted normal curve overlaid
 3. **Predicted angle scatter** — FE and GE predictions across all observations
 4. **Violin + swarm plot** — Distribution shape comparison with individual data points
 
 ### Individual Peak Plots (`plots/individuals/`)
 
-14 plots, one per peak. Each has two panels:
+13 plots, one per included peak. Each has two panels:
 
 - **Left panel (lime green)**: FE predicted vs FE measured
 - **Right panel (hot pink)**: GE predicted vs GE measured
@@ -282,7 +263,7 @@ star-intersections/
 ├── README.md
 ├── analysis.ipynb              # Interactive Jupyter notebook
 ├── plot_intersections.py       # Overview plots (4 figures)
-├── plot_individuals.py         # Individual per-peak plots (14 figures)
+├── plot_individuals.py         # Individual per-peak plots (13 figures)
 ├── .gitignore
 └── plots/
     ├── 1_residual_bars.png
@@ -296,7 +277,6 @@ star-intersections/
         ├── blue_mountain.png
         ├── mount_rosa.png
         ├── green_mountain.png
-        ├── north_peak.png
         ├── getaway_peak.png
         ├── hounds_tooth.png
         ├── old_blyn.png

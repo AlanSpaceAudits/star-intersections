@@ -22,6 +22,7 @@ FE_COLOR_MEAS = "#4a8a0e"  # darker lime (measured)
 GE_COLOR = "#ff1493"       # hot pink (predicted)
 GE_COLOR_MEAS = "#cc1e8a"  # softer deep pink (measured)
 R_EARTH_M = 6_371_000  # mean Earth radius in meters
+MAX_DIST_M = 100_000   # exclude observations beyond 100 km
 
 
 def deg2rad(d: float) -> float:
@@ -42,6 +43,15 @@ def sigma_to_meters(sigma_dd: float, dist_m: float) -> float:
 def load_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, skipinitialspace=True)
     df.columns = df.columns.str.strip()
+    # Estimate observation distance from GE terrestrial drop
+    df["dist_m"] = 2.0 * R_EARTH_M * deg2rad(df["GE_terrestrial_drop_dd"])
+    # Exclude observations beyond 100 km
+    excluded = df[df["dist_m"] > MAX_DIST_M]
+    if len(excluded) > 0:
+        for _, row in excluded.iterrows():
+            print(f"  Excluded: {row['Peak']} / {row['Star']} "
+                  f"(~{row['dist_m']/1000:.0f} km > 100 km)")
+    df = df[df["dist_m"] <= MAX_DIST_M].reset_index(drop=True)
     return df
 
 
