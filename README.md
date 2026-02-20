@@ -13,7 +13,7 @@ For each observation, the dataset contains the model's predicted angle, the meas
 
 ## Dataset
 
-17 star observations across 13 peaks:
+18 star observations across 14 peaks:
 
 | Peak | Stars | Location |
 |------|-------|----------|
@@ -30,6 +30,7 @@ For each observation, the dataset contains the model's predicted angle, the meas
 | Ediz Spit Blyn | HD187663, 3 Cap | Washington |
 | Puhitampi | Baten Kaitos, 53 Cet | Idaho |
 | Lucky Peak | HD 76600, HIP 45592 | Idaho |
+| Varley SE | Regulus | British Columbia |
 
 ### CSV Columns
 
@@ -63,7 +64,7 @@ Where:
 
 ### Step 2: Maximum Likelihood Estimation (MLE)
 
-We collect all residuals from the 17 observations and fit a Gaussian using Maximum Likelihood Estimation via `scipy.stats.norm.fit()`. This computes:
+We collect all residuals from the 18 observations and fit a Gaussian using Maximum Likelihood Estimation via `scipy.stats.norm.fit()`. This computes:
 
 ```
         1   n
@@ -83,9 +84,9 @@ We collect all residuals from the 17 observations and fit a Gaussian using Maxim
 
 | | FE Residuals | GE Residuals |
 |---|---|---|
-| μ (mean/bias) | 0.1053° | 0.2882° |
-| σ (std dev) | 0.1172° | 0.0917° |
-| \|μ\| (absolute bias) | 0.1053° | 0.2882° |
+| μ (mean/bias) | 0.1039° | 0.2811° |
+| σ (std dev) | 0.1141° | 0.0938° |
+| \|μ\| (absolute bias) | 0.1039° | 0.2811° |
 
 ### Step 3: Normality Validation (Shapiro-Wilk Test)
 
@@ -173,14 +174,14 @@ For a normal distribution, ~68% of values fall within 1σ, ~95% within 2σ, and 
 
 ### Overview Plots (`plots/`)
 
-1. **Residual bar chart** — All 17 observations side-by-side, ΔFE vs ΔGE with 1σ error bars
+1. **Residual bar chart** — All 18 observations side-by-side, ΔFE vs ΔGE with 1σ error bars
 2. **Gaussian histograms** — Residual distribution for each model with the fitted normal curve overlaid
 3. **Predicted angle scatter** — FE and GE predictions across all observations
 4. **Violin + swarm plot** — Distribution shape comparison with individual data points
 
 ### Individual Peak Plots (`plots/individuals/`)
 
-13 plots, one per peak. Each has two panels:
+14 plots, one per peak. Each has two panels:
 
 - **Left panel (lime green)**: FE predicted vs FE measured
 - **Right panel (hot pink)**: GE predicted vs GE measured
@@ -247,7 +248,7 @@ star-intersections/
 ├── README.md
 ├── analysis.ipynb              # Interactive Jupyter notebook
 ├── plot_intersections.py       # Overview plots (4 figures)
-├── plot_individuals.py         # Individual per-peak plots (13 figures)
+├── plot_individuals.py         # Individual per-peak plots (14 figures)
 ├── .gitignore
 └── plots/
     ├── 1_residual_bars.png
@@ -267,7 +268,8 @@ star-intersections/
         ├── old_blyn.png
         ├── ediz_spit_blyn.png
         ├── puhitampi.png
-        └── lucky_peak.png
+        ├── lucky_peak.png
+        └── varley_se.png
 ```
 
 ## License
