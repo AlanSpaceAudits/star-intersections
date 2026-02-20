@@ -78,15 +78,27 @@ We collect all residuals from the 18 observations and fit a Gaussian using Maxim
             └─────────────────────┘
 ```
 
-**Important**: MLE uses `n` in the denominator (population standard deviation), not `n-1` (sample standard deviation). With n=17 the difference is small (~3%).
+**Important**: MLE uses `n` in the denominator (population standard deviation), not `n-1` (sample standard deviation). With n=18 the difference is small (~3%).
 
-**Results from this dataset:**
+**Results from this dataset (all 18 observations):**
 
 | | FE Residuals | GE Residuals |
 |---|---|---|
 | μ (mean/bias) | 0.1039° | 0.2811° |
 | σ (std dev) | 0.1141° | 0.0938° |
 | \|μ\| (absolute bias) | 0.1039° | 0.2811° |
+
+**Results excluding North Peak outlier (n=17):**
+
+The North Peak observation (HD55892, ΔFE = -0.23°) is the only negative FE residual and sits far from the cluster of other values. Removing it:
+
+| | FE Residuals | GE Residuals |
+|---|---|---|
+| μ (mean/bias) | 0.1235° | 0.2771° |
+| σ (std dev) | 0.0827° | 0.0950° |
+| \|μ\| (absolute bias) | 0.1235° | 0.2771° |
+
+Without North Peak, FE σ drops from 0.1141° to 0.0827° (a 28% reduction). GE values are largely unchanged since North Peak's GE residual (0.35°) is not an outlier relative to the other GE residuals.
 
 ### Step 3: Normality Validation (Shapiro-Wilk Test)
 
@@ -96,14 +108,23 @@ Before relying on the Gaussian model, we verify the residuals actually follow a 
 - **If p > 0.05**: Cannot reject H₀ — data is consistent with normal
 - **If p ≤ 0.05**: Reject H₀ — data is not normally distributed
 
-**Results:**
+**Results (all 18 observations):**
 
 | Model | W statistic | p-value | Verdict |
 |-------|-------------|---------|---------|
-| FE | 0.8874 | 0.0419 | Non-normal (p < 0.05) |
-| GE | 0.9631 | 0.6904 | Normal (p > 0.05) |
+| FE | 0.8918 | 0.0415 | Non-normal (p < 0.05) |
+| GE | 0.9641 | 0.6817 | Normal (p > 0.05) |
 
 The FE residuals fail the normality test (driven by the North Peak outlier at -0.23°). The GE residuals pass.
+
+**Results excluding North Peak (n=17):**
+
+| Model | W statistic | p-value | Verdict |
+|-------|-------------|---------|---------|
+| FE | 0.9407 | 0.3266 | Normal (p > 0.05) |
+| GE | 0.9638 | 0.7030 | Normal (p > 0.05) |
+
+With North Peak removed, both models' residuals pass the Shapiro-Wilk normality test.
 
 ### Step 4: Error Bars on Measurements
 
