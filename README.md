@@ -170,6 +170,19 @@ The verdict:
 
 For a normal distribution, ~68% of values fall within 1σ, ~95% within 2σ, and ~99.7% within 3σ.
 
+### What σ Represents
+
+The σ used for error bars is derived from the residuals (Δ columns) themselves — it characterizes the spread of the differences between each model's predictions and the corresponding measurements across all observations.
+
+This means:
+
+- **σ is self-referential**: it is computed from the same prediction-vs-measurement gaps it is then used to evaluate. It is not an independently calibrated instrument uncertainty.
+- **A prediction falling within ±1σ** means it is within one standard deviation of the typical prediction-measurement gap for that model across the dataset.
+- **It does not independently validate** that a model is correct. It quantifies whether a given observation's residual is consistent with the residuals from the other observations in the same dataset.
+- **Systematic bias (μ ≠ 0)** indicates a consistent directional offset between predictions and measurements. The pass/fail badges evaluate predictions against the measurement ± σ, not against zero.
+
+In short, the Gaussian error model describes the statistical distribution of residuals within the dataset. Whether the residuals themselves are physically meaningful depends on the accuracy of the observations and the models being tested, which is outside the scope of this analysis.
+
 ## Output Plots
 
 ### Overview Plots (`plots/`)
