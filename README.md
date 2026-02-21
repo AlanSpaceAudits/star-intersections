@@ -185,6 +185,35 @@ This means:
 
 In short, the Gaussian error model describes the statistical distribution of residuals within the dataset. Whether the residuals themselves are physically meaningful depends on the accuracy of the observations and the models being tested, which is outside the scope of this analysis.
 
+### Step 7: Paired Model Comparison
+
+Steps 1–6 characterize each model's residuals independently. To determine which model **consistently** makes the closer prediction, we compare them observation-by-observation.
+
+For each observation, compute |ΔFE| and |ΔGE| (absolute residuals). The model with the smaller absolute residual is "closer" for that observation.
+
+**Win/Loss Tally:** Count how many observations each model wins. In this dataset, FE is closer for 17/17 observations (100%).
+
+**Wilcoxon Signed-Rank Test:** A non-parametric paired test that asks: "Is one model's absolute residuals systematically smaller than the other's?" Unlike a t-test, it makes no normality assumption about the *differences* between paired values.
+
+- **Null hypothesis (H₀)**: The distribution of |ΔFE| − |ΔGE| is symmetric about zero (neither model is systematically closer)
+- **If p < 0.05**: Reject H₀ — one model's residuals are significantly and consistently smaller
+
+**Results (17 observations, North Peak excluded):**
+
+| Metric | Value |
+|--------|-------|
+| FE closer | 17/17 observations |
+| GE closer | 0/17 observations |
+| Wilcoxon W | 0.0 |
+| Wilcoxon p | 0.0003 |
+| Verdict | FE residuals are systematically smaller (p < 0.05) |
+
+**Visualization:** Three plots show this comparison from different angles:
+
+- **Paired difference bars** (plot 5): Horizontal bars of |ΔFE| − |ΔGE| per observation. All bars extend left (FE closer).
+- **Absolute residual scatter** (plot 6): |ΔFE| on x-axis vs |ΔGE| on y-axis with a y = x diagonal. All 17 points sit above the line (FE has the smaller error for every observation).
+- **Absolute residual CDF** (plot 7): Empirical cumulative distribution functions. The FE curve sits entirely to the left of GE (first-order stochastic dominance), meaning FE errors are smaller at every percentile.
+
 ## Output Plots
 
 ### Overview Plots (`plots/`)
@@ -193,6 +222,9 @@ In short, the Gaussian error model describes the statistical distribution of res
 2. **Gaussian histograms** — Residual distribution for each model with the fitted normal curve overlaid
 3. **Predicted angle scatter** — FE and GE predictions across all observations
 4. **Violin + swarm plot** — Distribution shape comparison with individual data points
+5. **Paired difference bars** — |ΔFE| − |ΔGE| per observation showing which model was closer and by how much
+6. **Absolute residual scatter** — |ΔFE| vs |ΔGE| with y = x diagonal; points above the line = FE closer
+7. **Absolute residual CDF** — Empirical cumulative distribution of |ΔFE| and |ΔGE|; leftward curve = consistently smaller errors
 
 ### Individual Peak Plots (`plots/individuals/`)
 
@@ -270,6 +302,9 @@ star-intersections/
     ├── 2_gaussian_histograms.png
     ├── 3_predicted_scatter.png
     ├── 4_violin_plot.png
+    ├── 5_paired_difference.png
+    ├── 6_abs_residual_scatter.png
+    ├── 7_abs_residual_cdf.png
     └── individuals/
         ├── pikes_peak.png
         ├── blodgett_peak.png

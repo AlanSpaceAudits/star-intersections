@@ -12,8 +12,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-CSV_PATH = Path.home() / "Documents" / "claude_dump" / \
-    "Celestial_Theodolite_Calculator_V_v9_1_1 - intersections.csv"
+CSV_PATH = Path(__file__).resolve().parent / "data" / "intersections.csv"
 OUTPUT_DIR = Path(__file__).parent / "plots" / "individuals"
 DPI = 150
 

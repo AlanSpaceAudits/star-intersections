@@ -2,11 +2,14 @@
 """
 Star Intersection Analysis — Gaussian Error Distribution Plots
 
-Reads celestial theodolite intersection data and produces four plots:
+Reads celestial theodolite intersection data and produces seven plots:
 1. Residual comparison bar chart (ΔFE vs ΔGE per observation)
 2. Histogram + Gaussian overlay for each model's residuals
 3. Predicted angle vs observation scatter with error bars
 4. Box/violin plot of residual distributions
+5. Paired difference bar chart (|ΔFE| − |ΔGE| per observation)
+6. |ΔFE| vs |ΔGE| scatter with y = x diagonal
+7. Cumulative distribution of absolute residuals
 """
 
 import sys
@@ -19,8 +22,7 @@ import pandas as pd
 from scipy import stats
 
 # ── Config ──────────────────────────────────────────────────────────────
-CSV_PATH = Path.home() / "Documents" / "claude_dump" / \
-    "Celestial_Theodolite_Calculator_V_v9_1_1 - intersections.csv"
+CSV_PATH = Path(__file__).resolve().parent / "data" / "intersections.csv"
 OUTPUT_DIR = Path(__file__).parent / "plots"
 DPI = 150
 FIGSIZE_WIDE = (14, 6)
@@ -179,6 +181,111 @@ def plot_violin(df: pd.DataFrame, ax: plt.Axes):
                 bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=color, alpha=0.8))
 
 
+# ── Plot 5: Paired difference bar chart ────────────────────────────────
+def plot_paired_difference(df: pd.DataFrame, ax: plt.Axes):
+    """Horizontal bar chart of |ΔFE| − |ΔGE| per observation.
+    Negative = FE closer, Positive = GE closer."""
+    fe_abs = df["ΔFE_intersection_dd"].abs().values
+    ge_abs = df["ΔGE_intersection__dd"].abs().values
+    diff = fe_abs - ge_abs  # negative = FE wins
+
+    y = np.arange(len(df))
+    colors = [FE_COLOR if d < 0 else GE_COLOR for d in diff]
+
+    ax.barh(y, diff, color=colors, alpha=0.85, edgecolor="white", linewidth=0.5)
+    ax.axvline(0, color="grey", lw=0.8, ls="--")
+
+    # Win/loss tally
+    fe_wins = int(np.sum(diff < 0))
+    ge_wins = int(np.sum(diff > 0))
+    ties = int(np.sum(diff == 0))
+    tally = f"FE closer: {fe_wins}    GE closer: {ge_wins}"
+    if ties:
+        tally += f"    Tied: {ties}"
+    ax.set_title(f"Which Model Was Closer?  —  {tally}")
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(df["label"], fontsize=7)
+    ax.set_xlabel("|ΔFE| − |ΔGE|  (°)     ← FE closer | GE closer →")
+    ax.grid(axis="x", alpha=0.3)
+    ax.invert_yaxis()
+
+    # Legend
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(facecolor=FE_COLOR, label="FE closer"),
+                       Patch(facecolor=GE_COLOR, label="GE closer")],
+              fontsize=8, loc="lower right")
+
+
+# ── Plot 6: |ΔFE| vs |ΔGE| scatter with y=x line ────────────────────
+def plot_abs_scatter(df: pd.DataFrame, ax: plt.Axes):
+    """Scatter of |ΔFE| vs |ΔGE|. Points below y=x → FE closer."""
+    fe_abs = df["ΔFE_intersection_dd"].abs().values
+    ge_abs = df["ΔGE_intersection__dd"].abs().values
+
+    ax.scatter(fe_abs, ge_abs, s=60, zorder=5,
+               color="#555555", edgecolors="white", linewidth=0.8)
+
+    # Label each point
+    for i, row in df.iterrows():
+        ax.annotate(row["Peak"], (fe_abs[i], ge_abs[i]),
+                    textcoords="offset points", xytext=(5, 5),
+                    fontsize=6, color="#333333")
+
+    # y = x diagonal
+    lo = 0
+    hi = max(fe_abs.max(), ge_abs.max()) * 1.15
+    ax.plot([lo, hi], [lo, hi], ls="--", lw=1, color="grey", zorder=1)
+
+    # Shade the two regions
+    # Above y=x: |ΔGE| > |ΔFE| → FE has smaller error → FE closer
+    # Below y=x: |ΔFE| > |ΔGE| → GE has smaller error → GE closer
+    ax.fill_between([lo, hi], [lo, hi], hi, alpha=0.06, color=FE_COLOR,
+                    label="FE closer (above line)")
+    ax.fill_between([lo, hi], lo, [lo, hi], alpha=0.06, color=GE_COLOR,
+                    label="GE closer (below line)")
+
+    ax.set_xlabel("|ΔFE| (°)")
+    ax.set_ylabel("|ΔGE| (°)")
+    ax.set_title("|ΔFE| vs |ΔGE| — Points Above Diagonal = FE Closer")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_aspect("equal")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+
+
+# ── Plot 7: Empirical CDF of absolute residuals ──────────────────────
+def plot_abs_cdf(df: pd.DataFrame, ax: plt.Axes):
+    """CDF of |ΔFE| and |ΔGE|. Curve further left = consistently smaller errors."""
+    fe_abs = np.sort(df["ΔFE_intersection_dd"].abs().values)
+    ge_abs = np.sort(df["ΔGE_intersection__dd"].abs().values)
+    n = len(fe_abs)
+    ecdf = np.arange(1, n + 1) / n
+
+    ax.step(fe_abs, ecdf, where="post", color=FE_COLOR, lw=2, label="FE |Δ|")
+    ax.step(ge_abs, ecdf, where="post", color=GE_COLOR, lw=2, label="GE |Δ|")
+
+    # Shade area between curves
+    all_x = np.sort(np.unique(np.concatenate([fe_abs, ge_abs])))
+    fe_ecdf_interp = np.searchsorted(fe_abs, all_x, side="right") / n
+    ge_ecdf_interp = np.searchsorted(ge_abs, all_x, side="right") / n
+    ax.fill_betweenx(
+        np.linspace(0, 1, 100),
+        np.interp(np.linspace(0, 1, 100), fe_ecdf_interp, all_x),
+        np.interp(np.linspace(0, 1, 100), ge_ecdf_interp, all_x),
+        alpha=0.08, color="grey")
+
+    ax.set_xlabel("|Δ Intersection| (°)")
+    ax.set_ylabel("Cumulative Probability")
+    ax.set_title("Empirical CDF of Absolute Residuals — Leftward = Better")
+    ax.legend(fontsize=9)
+    ax.grid(alpha=0.3)
+    ax.set_ylim(0, 1.02)
+    ax.set_xlim(0, None)
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+
+
 # ── Summary statistics ─────────────────────────────────────────────────
 def print_summary(df: pd.DataFrame):
     print("\n" + "=" * 60)
@@ -203,6 +310,36 @@ def print_summary(df: pd.DataFrame):
         stat, p = stats.shapiro(df[col].values)
         print(f"    {model}: W={stat:.4f}, p={p:.4f}" +
               (" (normal)" if p > 0.05 else " (non-normal)"))
+
+    # ── Paired comparison: which model is consistently closer? ──
+    fe_abs = df["ΔFE_intersection_dd"].abs().values
+    ge_abs = df["ΔGE_intersection__dd"].abs().values
+    diff = fe_abs - ge_abs
+
+    fe_wins = int(np.sum(diff < 0))
+    ge_wins = int(np.sum(diff > 0))
+    ties = int(np.sum(diff == 0))
+
+    print(f"\n  Paired comparison (|ΔFE| vs |ΔGE| per observation):")
+    print(f"    FE closer: {fe_wins}/{len(diff)}")
+    print(f"    GE closer: {ge_wins}/{len(diff)}")
+    if ties:
+        print(f"    Tied:      {ties}/{len(diff)}")
+
+    # Wilcoxon signed-rank test on |ΔFE| vs |ΔGE|
+    try:
+        w_stat, w_p = stats.wilcoxon(fe_abs, ge_abs, alternative="two-sided")
+        print(f"\n  Wilcoxon signed-rank test (|ΔFE| vs |ΔGE|):")
+        print(f"    W={w_stat:.1f}, p={w_p:.4f}")
+        if w_p < 0.05:
+            winner = "FE" if np.median(diff) < 0 else "GE"
+            print(f"    → Significant (p < 0.05): {winner} residuals are "
+                  f"systematically smaller")
+        else:
+            print(f"    → Not significant (p ≥ 0.05): no systematic difference")
+    except ValueError as e:
+        print(f"\n  Wilcoxon signed-rank test: could not compute ({e})")
+
     print("=" * 60)
 
 
@@ -252,6 +389,30 @@ def main():
     fig4.tight_layout()
     fig4.savefig(OUTPUT_DIR / "4_violin_plot.png", dpi=DPI, bbox_inches="tight")
     print("Saved: plots/4_violin_plot.png")
+
+    # ── Figure 5: Paired difference bars ──
+    fig5, ax5 = plt.subplots(figsize=FIGSIZE_WIDE, facecolor=BG_COLOR)
+    ax5.set_facecolor(BG_COLOR)
+    plot_paired_difference(df, ax5)
+    fig5.tight_layout()
+    fig5.savefig(OUTPUT_DIR / "5_paired_difference.png", dpi=DPI, bbox_inches="tight")
+    print("Saved: plots/5_paired_difference.png")
+
+    # ── Figure 6: |ΔFE| vs |ΔGE| scatter ──
+    fig6, ax6 = plt.subplots(figsize=FIGSIZE_SQUARE, facecolor=BG_COLOR)
+    ax6.set_facecolor(BG_COLOR)
+    plot_abs_scatter(df, ax6)
+    fig6.tight_layout()
+    fig6.savefig(OUTPUT_DIR / "6_abs_residual_scatter.png", dpi=DPI, bbox_inches="tight")
+    print("Saved: plots/6_abs_residual_scatter.png")
+
+    # ── Figure 7: CDF of |residuals| ──
+    fig7, ax7 = plt.subplots(figsize=FIGSIZE_SQUARE, facecolor=BG_COLOR)
+    ax7.set_facecolor(BG_COLOR)
+    plot_abs_cdf(df, ax7)
+    fig7.tight_layout()
+    fig7.savefig(OUTPUT_DIR / "7_abs_residual_cdf.png", dpi=DPI, bbox_inches="tight")
+    print("Saved: plots/7_abs_residual_cdf.png")
 
     plt.show()
     print("\nDone. All plots saved to:", OUTPUT_DIR.resolve())
