@@ -21,17 +21,17 @@ For each observation, the dataset contains the model's predicted angle, the meas
 |------|-------|----------|--------|
 | Pikes Peak | 39 Aquarii, HD 217533, HD 217533 (2), 39 Aquarii (Moon) | Colorado | Included |
 | Blodgett Peak | LP Aquarii | Colorado | Included |
-| Cheyenne Mtn | Mu Fornacis | Colorado | Included |
-| Blue Mtn | HD 32515 | Colorado | Included |
+| Cheyenne Mountain | Mu Fornacis | Colorado | Included |
+| Blue Mountain | HD 32515 | Colorado | Included |
 | Mount Rosa | HD 17320 | Colorado | Included |
-| Green Mtn | HD 28388 | Colorado | Included |
+| Green Mountain | HD 28388 | Colorado | Included |
 | North Peak | HD55892 (I Puppis), HD56455 (PR Puppis), HD56813 | Colorado | Excluded (~131 km) |
-| Getaway Mtn | HD 102928 | Idaho | Included |
+| Getaway Peak | HD 102928 | Idaho | Included |
 | Hounds Tooth | HD199828 | Utah | Included |
-| Old-Blyn Mtn | HD206088, HD207098 | Washington | Included |
-| Ediz-Blyn Mtn | HD187663, 3 Cap | Washington | Included |
-| Varley SE2 Squamish | Regulus | British Columbia | Included |
-| Puhitempi Kuaikatete | EZ Cet, 53 Cet, Baten Kaitos | Idaho | Included |
+| Old Blyn | HD206088, HD207098 | Washington | Included |
+| Ediz Blyn | HD187663, 3 Cap | Washington | Included |
+| Varley SE | Regulus | British Columbia | Included |
+| Puhitampi | EZ Cet, 53 Cet, Baten Kaitos | Idaho | Included |
 | Lucky Peak | HD 76600, HD 76525, SAO 117309, HD 77039, HD 78282, SAO 117493, HIP 45114, HIP 45592, SOA 117565, HD 80537 | Idaho | Included |
 
 ### Data Files
@@ -332,17 +332,17 @@ star-intersections/
     └── individuals/
         ├── pikes_peak.png
         ├── blodgett_peak.png
-        ├── cheyenne_mtn.png
-        ├── blue_mtn.png
+        ├── cheyenne_mountain.png
+        ├── blue_mountain.png
         ├── mount_rosa.png
-        ├── green_mtn.png
+        ├── green_mountain.png
         ├── north_peak.png
-        ├── getaway_mtn.png
+        ├── getaway_peak.png
         ├── hounds_tooth.png
-        ├── old-blyn_mtn.png
-        ├── ediz-blyn_mtn.png
-        ├── varley_se2_squamish.png
-        ├── puhitempi_kuaikatete.png
+        ├── old_blyn.png
+        ├── ediz_spit_blyn.png
+        ├── varley_se.png
+        ├── puhitampi.png
         └── lucky_peak.png
 ```
 

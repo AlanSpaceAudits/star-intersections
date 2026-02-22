@@ -55,17 +55,40 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
     fe_delta = peak_df["ΔFE_intersection_dd"].values
     ge_delta = peak_df["ΔGE_intersection__dd"].values
 
-    # Measured = predicted + delta
-    fe_meas = fe_pred + fe_delta
-    ge_meas = ge_pred + ge_delta
+    # Actual star positions: Δ = predicted - measured, so measured = predicted - Δ
+    # FE: Star→Peak ♈︎ = FE_pred - ΔFE
+    # GE: Star→Obs ♈︎  = GE_pred - ΔGE
+    fe_meas = fe_pred - fe_delta
+    ge_meas = ge_pred - ge_delta
 
     # Two side-by-side subplots: FE panel (left), GE panel (right)
-    fig, (ax_fe, ax_ge) = plt.subplots(1, 2, figsize=(12, 6), facecolor="#fafafa")
+    fig_width = max(12, n * 2.5)
+    fig, (ax_fe, ax_ge) = plt.subplots(1, 2, figsize=(fig_width, 6), facecolor="#fafafa")
     fig.suptitle(peak_name, fontsize=14, fontweight="bold", y=0.98)
 
-    for ax, pred, meas, delta, sigma, color, color_meas, model_label in [
-        (ax_fe, fe_pred, fe_meas, fe_delta, fe_sigma, FE_COLOR, FE_COLOR_MEAS, "Flat Earth"),
-        (ax_ge, ge_pred, ge_meas, ge_delta, ge_sigma, GE_COLOR, GE_COLOR_MEAS, "Globe Earth"),
+    # Compute shared y-axis: always includes 0, same range for both panels
+    fe_sigma_2 = 2.0 * fe_sigma
+    ge_sigma_2 = 2.0 * ge_sigma
+    all_highs = np.concatenate([
+        fe_pred, fe_meas + fe_sigma_2,
+        ge_pred, ge_meas + ge_sigma_2,
+    ])
+    all_lows = np.concatenate([
+        fe_pred, fe_meas - fe_sigma_2,
+        ge_pred, ge_meas - ge_sigma_2,
+    ])
+    data_top = all_highs.max()
+    data_bottom = min(0, all_lows.min())
+    data_span = max(data_top - data_bottom, 0.3)
+    y_lo = data_bottom - data_span * 0.05 if data_bottom < 0 else 0
+    y_hi = data_top + data_span * 0.70
+    text_offset = data_span * 0.04
+
+    for ax, pred, meas, delta, sigma, color, color_meas, model_label, pred_label, meas_label in [
+        (ax_fe, fe_pred, fe_meas, fe_delta, fe_sigma, FE_COLOR, FE_COLOR_MEAS,
+         "Flat Earth", "FE peak angle", "Star\u2192Peak \u2648\ufe0e"),
+        (ax_ge, ge_pred, ge_meas, ge_delta, ge_sigma, GE_COLOR, GE_COLOR_MEAS,
+         "Globe Earth", "GE peak angle", "Star\u2192Obs \u2648\ufe0e"),
     ]:
         ax.set_facecolor("#fafafa")
         x = np.arange(n)
@@ -74,10 +97,10 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
 
         # Predicted bar (no error bar)
         ax.bar(x - width / 2, pred, width, color=color, alpha=0.8,
-               label=f"{model_label} predicted")
-        # Measured bar with 2σ error bars (darker variant)
+               label=pred_label)
+        # Star true position bar with 2σ error bars (darker variant)
         ax.bar(x + width / 2, meas, width, color=color_meas, alpha=0.8,
-               label=f"{model_label} measured", yerr=sigma_2, capsize=5,
+               label=meas_label, yerr=sigma_2, capsize=5,
                error_kw={"lw": 1.2, "capthick": 1.2})
 
         # Red reference line at predicted value extending to measured bar
@@ -87,16 +110,7 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
                       colors=REF_COLOR, linewidths=1.8, linestyles="--",
                       zorder=6, label="predicted ref" if i == 0 else "")
 
-        # Compute y-axis limits (error bars are 2σ on measured)
-        all_vals = np.concatenate([pred, meas + sigma_2, meas - sigma_2])
-        data_top = all_vals.max()
-        data_bottom = all_vals.min()
-        data_span = max(data_top - data_bottom, 0.3)
-        y_lo = data_bottom - data_span * 0.15
-        y_hi = data_top + data_span * 0.70
-        ax.set_ylim(max(0, y_lo), y_hi)
-
-        text_offset = data_span * 0.04
+        ax.set_ylim(y_lo, y_hi)
 
         # Annotate delta, ± meters, and pass/fail above the measured bar
         for i in range(n):
@@ -163,17 +177,21 @@ def main():
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Plot all peaks (including excluded ones)
-    peaks = df.groupby("Peak", sort=False)
-    for peak_name, peak_df in peaks:
-        fig = plot_peak(peak_df, peak_name, fe_sigma, ge_sigma)
-        fname = f"{safe_filename(peak_name)}.png"
+    # Plot each observation individually (one star per chart)
+    count = 0
+    for idx, row in df.iterrows():
+        obs_df = df.loc[[idx]]
+        peak_name = row["Peak"]
+        star_name = row["Star"]
+        title = f"{peak_name} — {star_name}"
+        fig = plot_peak(obs_df, title, fe_sigma, ge_sigma)
+        fname = f"{safe_filename(peak_name)}_{safe_filename(star_name)}.png"
         fig.savefig(OUTPUT_DIR / fname, dpi=DPI, bbox_inches="tight")
         plt.close(fig)
-        stars = ", ".join(peak_df["Star"].values)
-        print(f"  {fname}  ({stars})")
+        print(f"  {fname}")
+        count += 1
 
-    print(f"\nSaved {len(peaks)} plots to: {OUTPUT_DIR.resolve()}")
+    print(f"\nSaved {count} plots to: {OUTPUT_DIR.resolve()}")
 
 
 if __name__ == "__main__":

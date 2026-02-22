@@ -20,6 +20,18 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent / "data"
 R_EARTH_M = 6_371_000
 
+# Normalize abbreviated peak names from data_table.csv to canonical names
+PEAK_NAME_MAP = {
+    "Cheyenne Mtn": "Cheyenne Mountain",
+    "Blue Mtn": "Blue Mountain",
+    "Green Mtn": "Green Mountain",
+    "Getaway Mtn": "Getaway Peak",
+    "Old-Blyn Mtn": "Old Blyn",
+    "Ediz-Blyn Mtn": "Ediz Blyn",
+    "Puhitempi Kuaikatete": "Puhitampi",
+    "Varley SE2 Squamish": "Varley SE",
+}
+
 
 def main():
     dt = pd.read_csv(DATA_DIR / "data_table.csv")
@@ -65,6 +77,9 @@ def main():
         "Distance (m)": distance.round(4),
         "θStar,Obs,True": star_obs_aries,
     })
+
+    # Normalize peak names
+    out["Peak"] = out["Peak"].replace(PEAK_NAME_MAP)
 
     out_path = DATA_DIR / "intersections.csv"
     out.to_csv(out_path, index=False)

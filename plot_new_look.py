@@ -12,6 +12,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 R_EARTH = 6_371_000
 
 df = pd.read_csv(CSV_PATH)
+df.columns = df.columns.str.strip()
 df['dist_m'] = df['Distance (m)'].astype(str).str.replace(',', '').astype(float)
 df['dist_km'] = df['dist_m'] / 1000
 
@@ -23,8 +24,8 @@ df['star_true'] = df['θStar,Obs,True'].astype(float)
 df['refr_deg'] = df['star_apparent'] - df['star_true']
 df['refr_arcmin'] = df['refr_deg'] * 60
 
-df['fe_resid'] = df[' ΔFE_intersection_dd'].astype(float)
-df['ge_resid'] = df[' ΔGE_intersection__dd'].astype(float)
+df['fe_resid'] = df['ΔFE_intersection_dd'].astype(float)
+df['ge_resid'] = df['ΔGE_intersection__dd'].astype(float)
 df['drop'] = df['GE_terrestrial_drop_dd'].astype(float)
 
 df['label'] = df['Peak'] + '\n' + df['Star']
@@ -217,7 +218,7 @@ ax.text(25, 8, 'Refraction < γ/2', fontsize=11, color=COLOR_GAMMA, alpha=0.7,
 
 ax.set_xlabel('Half Central Angle γ/2 (arcmin)', fontsize=13)
 ax.set_ylabel('Measured Astronomical Refraction (arcmin)', fontsize=13)
-ax.set_title('All 18 Observations: Refraction vs Half Central Angle', fontsize=16, pad=15)
+ax.set_title(f'All {len(df)} Observations: Refraction vs Half Central Angle', fontsize=16, pad=15)
 ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, color='#333333', alpha=0.5)
 ax.set_xlim(0, max_val)
