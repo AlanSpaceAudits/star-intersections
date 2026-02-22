@@ -10,7 +10,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
+
+from gaussian import GaussianAnalysis
 
 CSV_PATH = Path(__file__).resolve().parent / "data" / "intersections.csv"
 OUTPUT_DIR = Path(__file__).parent / "plots" / "individuals"
@@ -21,7 +22,6 @@ FE_COLOR_MEAS = "#4a8a0e"  # darker lime (measured)
 GE_COLOR = "#ff1493"       # hot pink (predicted)
 GE_COLOR_MEAS = "#cc1e8a"  # softer deep pink (measured)
 R_EARTH_M = 6_371_000  # mean Earth radius in meters
-MAX_DIST_M = 100_000   # exclude observations beyond 100 km
 
 
 def deg2rad(d: float) -> float:
@@ -35,16 +35,8 @@ def distance_from_drop(drop_dd: float) -> float:
 
 
 def sigma_to_meters(sigma_dd: float, dist_m: float) -> float:
-    """Convert angular 1σ (degrees) to linear error (m) at a given distance."""
+    """Convert angular σ (degrees) to linear error (m) at a given distance."""
     return dist_m * deg2rad(sigma_dd)
-
-
-def load_data(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, skipinitialspace=True)
-    df.columns = df.columns.str.strip()
-    # Estimate observation distance from GE terrestrial drop
-    df["dist_m"] = 2.0 * R_EARTH_M * deg2rad(df["GE_terrestrial_drop_dd"])
-    return df
 
 
 def safe_filename(name: str) -> str:
@@ -159,21 +151,17 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
 
 def main():
     csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CSV_PATH
-    df = load_data(csv_path)
+
+    # Use gaussian.py module for all statistical computations
+    ga = GaussianAnalysis.from_csv(csv_path)
+    df = ga.df  # full dataframe with dist_m already computed
+
+    fe_sigma = ga.fe.sigma
+    ge_sigma = ga.ge.sigma
+
+    print(ga.summary())
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Compute global 1σ from observations within 100 km only
-    df_fit = df[df["dist_m"] <= MAX_DIST_M]
-    excluded = df[df["dist_m"] > MAX_DIST_M]
-    if len(excluded) > 0:
-        for _, row in excluded.iterrows():
-            print(f"  Excluded from Gaussian fit: {row['Peak']} / {row['Star']} "
-                  f"(~{row['dist_m']/1000:.0f} km > 100 km)")
-    fe_sigma = stats.norm.fit(df_fit["ΔFE_intersection_dd"].values)[1]
-    ge_sigma = stats.norm.fit(df_fit["ΔGE_intersection__dd"].values)[1]
-    print(f"  Gaussian fit from {len(df_fit)} observations: "
-          f"FE σ={fe_sigma:.4f}°, GE σ={ge_sigma:.4f}°")
 
     # Plot all peaks (including excluded ones)
     peaks = df.groupby("Peak", sort=False)

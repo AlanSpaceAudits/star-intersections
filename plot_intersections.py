@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from gaussian import GaussianAnalysis
+
 # ── Config ──────────────────────────────────────────────────────────────
 CSV_PATH = Path(__file__).resolve().parent / "data" / "intersections.csv"
 OUTPUT_DIR = Path(__file__).parent / "plots"
@@ -37,21 +39,17 @@ MAX_DIST_M = 100_000   # exclude observations beyond 100 km
 
 
 def load_data(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, skipinitialspace=True)
-    # Normalise column names (strip whitespace)
-    df.columns = df.columns.str.strip()
-    # Estimate observation distance from GE terrestrial drop
-    df["dist_m"] = 2.0 * R_EARTH_M * np.deg2rad(df["GE_terrestrial_drop_dd"])
-    # Exclude observations beyond 100 km
-    excluded = df[df["dist_m"] > MAX_DIST_M]
-    if len(excluded) > 0:
-        for _, row in excluded.iterrows():
+    """Load and filter data via the GaussianAnalysis module."""
+    ga = GaussianAnalysis.from_csv(path)
+    df = ga.included.copy().reset_index(drop=True)
+    df["label"] = df["Peak"] + "\n" + df["Star"]
+
+    # Print exclusions
+    if len(ga.excluded) > 0:
+        for _, row in ga.excluded.iterrows():
             print(f"  Excluded: {row['Peak']} / {row['Star']} "
                   f"(~{row['dist_m']/1000:.0f} km > 100 km)")
-    df = df[df["dist_m"] <= MAX_DIST_M].reset_index(drop=True)
-    # Short label for each observation
-    df["label"] = df["Peak"] + "\n" + df["Star"]
-    return df
+    return df, ga
 
 
 def gaussian_params(values: np.ndarray) -> tuple[float, float]:
@@ -350,8 +348,9 @@ def main():
         print(f"Error: CSV not found at {csv_path}")
         sys.exit(1)
 
-    df = load_data(csv_path)
+    df, ga = load_data(csv_path)
     print(f"Loaded {len(df)} observations from {csv_path.name}")
+    print(ga.summary())
 
     OUTPUT_DIR.mkdir(exist_ok=True)
 
