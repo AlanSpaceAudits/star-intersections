@@ -51,6 +51,9 @@ def safe_filename(name: str) -> str:
     return name.replace(" ", "_").replace("/", "-").lower()
 
 
+REF_COLOR = "#e74c3c"  # red reference line
+
+
 def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: float):
     n = len(peak_df)
 
@@ -75,17 +78,25 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
         ax.set_facecolor("#fafafa")
         x = np.arange(n)
         width = 0.3
+        sigma_2 = 2.0 * sigma  # error bars show ±2σ
 
         # Predicted bar (no error bar)
         ax.bar(x - width / 2, pred, width, color=color, alpha=0.8,
                label=f"{model_label} predicted")
-        # Measured bar with error bars (darker variant)
+        # Measured bar with 2σ error bars (darker variant)
         ax.bar(x + width / 2, meas, width, color=color_meas, alpha=0.8,
-               label=f"{model_label} measured", yerr=sigma, capsize=5,
+               label=f"{model_label} measured", yerr=sigma_2, capsize=5,
                error_kw={"lw": 1.2, "capthick": 1.2})
 
-        # Compute y-axis limits (error bars are on measured)
-        all_vals = np.concatenate([pred, meas + sigma, meas - sigma])
+        # Red reference line at predicted value extending to measured bar
+        for i in range(n):
+            ax.hlines(pred[i],
+                      x[i] - width, x[i] + width,
+                      colors=REF_COLOR, linewidths=1.8, linestyles="--",
+                      zorder=6, label="predicted ref" if i == 0 else "")
+
+        # Compute y-axis limits (error bars are 2σ on measured)
+        all_vals = np.concatenate([pred, meas + sigma_2, meas - sigma_2])
         data_top = all_vals.max()
         data_bottom = all_vals.min()
         data_span = max(data_top - data_bottom, 0.3)
@@ -99,7 +110,7 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
         for i in range(n):
             drop_dd = peak_df["GE_terrestrial_drop_dd"].values[i]
             dist_m = distance_from_drop(drop_dd)
-            err_m = sigma_to_meters(sigma, dist_m)
+            err_m = sigma_to_meters(sigma_2, dist_m)
 
             # How many sigma is the prediction from the measurement?
             n_sigma = abs(pred[i] - meas[i]) / sigma
@@ -116,9 +127,9 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
                 verdict = f"OUTSIDE 2\u03c3 ({n_sigma:.1f}\u03c3)"
                 v_color = "#c0392b"  # red
 
-            y_label = max(pred[i], meas[i] + sigma) + text_offset
+            y_label = max(pred[i], meas[i] + sigma_2) + text_offset
             ax.text(x[i], y_label,
-                    f"Δ={delta[i]:+.2f}° (±{err_m:.0f} m)",
+                    f"\u0394={delta[i]:+.4f}\u00b0 (\u00b1{err_m:.0f} m)",
                     ha="center", va="bottom", fontsize=8, color=color_meas, fontweight="bold")
 
             # Pass/fail badge above the delta label
@@ -132,13 +143,13 @@ def plot_peak(peak_df: pd.DataFrame, peak_name: str, fe_sigma: float, ge_sigma: 
         for i in range(n):
             drop = peak_df["GE_terrestrial_drop_dd"].values[i]
             ax.text(x[i], min(pred[i], meas[i]) - text_offset,
-                    f"drop = {drop:.2f}°",
+                    f"drop = {drop:.4f}\u00b0",
                     ha="center", va="top", fontsize=8, color="black", fontweight="bold")
 
         ax.set_xticks(x)
         ax.set_xticklabels(stars, fontsize=9)
-        ax.set_ylabel("Angle (°)")
-        ax.set_title(model_label, fontsize=11)
+        ax.set_ylabel("Angle (\u00b0)")
+        ax.set_title(f"{model_label}  (error bars = \u00b12\u03c3)", fontsize=11)
         ax.legend(fontsize=8, loc="upper right")
         ax.grid(axis="y", alpha=0.3)
 
